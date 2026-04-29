@@ -120,7 +120,7 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>Demo Login + CRUD</h1>
+      <h1 id="main-title">Demo Login + CRUD desde el puerto -</h1>
       <p class="help">Flujo recomendado: 1) Login, 2) Crear item, 3) Editar item, 4) Eliminar item.</p>
       <p class="help" id="server-info"></p>
     </div>
@@ -188,7 +188,20 @@
 
     function renderServerInfo() {
       const host = window.location.host;
-      setMessage('server-info', `Accediendo por Nginx en ${host}.`);
+
+      fetch('/server-info')
+        .then(r => r.json())
+        .then(data => {
+          const port = data.port || '-';
+          const backend = data.backend || 'backend';
+
+          document.getElementById('main-title').innerText = `Demo Login + CRUD desde el puerto ${port}`;
+          setMessage('server-info', `Accediendo por Nginx en ${host}. Atendido por ${backend}.`);
+        })
+        .catch(() => {
+          document.getElementById('main-title').innerText = 'Demo Login + CRUD desde el puerto -';
+          setMessage('server-info', `Accediendo por Nginx en ${host}.`);
+        });
     }
 
     function login() {

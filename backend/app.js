@@ -107,6 +107,13 @@ app.delete("/items/:id", auth, asyncHandler(async (req, res) => {
 
 // TEST
 
+app.get("/server-info", (req, res) => {
+  res.json({
+    backend: process.env.HOSTNAME || "backend",
+    port: PORT,
+  });
+});
+
 // Vista principal (frontend simple)
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views.html"));
