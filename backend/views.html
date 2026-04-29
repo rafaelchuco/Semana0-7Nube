@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Login + CRUD</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
+    input, button { margin: 0.2rem; }
+    .hidden { display: none; }
+    #items-list { margin-top: 1rem; }
+    .item { border: 1px solid #ccc; padding: 0.5rem; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Demo Login + CRUD</h1>
+  <div id="login-section">
+    <h2>Login</h2>
+    <input id="username" placeholder="Usuario" value="admin">
+    <input id="password" type="password" placeholder="Contraseña" value="123">
+    <button onclick="login()">Entrar</button>
+    <div id="login-msg"></div>
+  </div>
+
+  <div id="crud-section" class="hidden">
+    <h2>CRUD de Items</h2>
+    <form onsubmit="addItem(event)">
+      <input id="item-name" placeholder="Nombre del item" required>
+      <button type="submit">Agregar</button>
+    </form>
+    <div id="items-list"></div>
+    <button onclick="logout()">Cerrar sesión</button>
+  </div>
+
+  <script>
+    let token = '';
+    let items = [];
+
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.token) {
+          token = data.token;
+          document.getElementById('login-section').classList.add('hidden');
+          document.getElementById('crud-section').classList.remove('hidden');
+          loadItems();
+        } else {
+          document.getElementById('login-msg').innerText = data.msg || 'Error';
+        }
+      });
+    }
+
+    function loadItems() {
+      fetch('/items', { headers: { Authorization: token } })
+        .then(r => r.json())
+        .then(data => {
+          items = data;
+          renderItems();
+        });
+    }
+
+    function renderItems() {
+      const list = document.getElementById('items-list');
+      list.innerHTML = '';
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <b>${item.name || '(sin nombre)'}</b> <br>
+          <button onclick="editItem(${item.id})">Editar</button>
+          <button onclick="deleteItem(${item.id})">Eliminar</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function addItem(e) {
+      e.preventDefault();
+      const name = document.getElementById('item-name').value;
+      fetch('/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ name })
+      })
+      .then(r => r.json())
+      .then(item => {
+        items.push(item);
+        renderItems();
+        document.getElementById('item-name').value = '';
+      });
+    }
+
+    function editItem(id) {
+      const nuevo = prompt('Nuevo nombre:');
+      if (!nuevo) return;
+      fetch(`/items/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: token },
+        body: JSON.stringify({ name: nuevo })
+      })
+      .then(() => loadItems());
+    }
+
+    function deleteItem(id) {
+      fetch(`/items/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: token }
+      })
+      .then(() => loadItems());
+    }
+
+    function logout() {
+      token = '';
+      document.getElementById('crud-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+      document.getElementById('login-msg').innerText = '';
+    }
+  </script>
+</body>
+</html>
