@@ -75,6 +75,31 @@ curl -X POST http://localhost/login \
 curl http://localhost/items -H "Authorization: TU_TOKEN"
 ```
 
+Crear item:
+
+```bash
+curl -X POST http://localhost/items \
+-H "Content-Type: application/json" \
+-H "Authorization: TU_TOKEN" \
+-d '{"name":"Laptop"}'
+```
+
+Editar item:
+
+```bash
+curl -X PUT http://localhost/items/ID_ITEM \
+-H "Content-Type: application/json" \
+-H "Authorization: TU_TOKEN" \
+-d '{"name":"Laptop Gamer"}'
+```
+
+Eliminar item:
+
+```bash
+curl -X DELETE http://localhost/items/ID_ITEM \
+-H "Authorization: TU_TOKEN"
+```
+
 ---
 
 ## ⚖️ Balanceo de carga
@@ -96,6 +121,43 @@ Verás que la respuesta alterna entre los 3 backends.
 - Accede a `http://localhost` para usar la interfaz web:
   - Login
   - Crear, editar y eliminar items
+
+### Flujo del CRUD explicado simple
+
+1. Inicia sesión con `admin / 123`.
+2. En el campo "Nombre del item", escribe un nombre y pulsa "Crear item".
+3. El item aparece en la tabla con su ID.
+4. Pulsa "Editar" en una fila para cargar ese item en el formulario.
+5. Cambia el nombre y pulsa "Guardar cambios".
+6. Pulsa "Eliminar" para borrar el item (con confirmación).
+
+La caja de estado te muestra mensajes como "Item creado", "Item actualizado" o "Item eliminado".
+
+---
+
+## 🔎 Endpoints del backend (resumen)
+
+- `POST /login`
+  - Body: `{ "username": "admin", "password": "123" }`
+  - Respuesta: `{ "token": "..." }`
+
+- `GET /items`
+  - Header: `Authorization: TU_TOKEN`
+  - Respuesta: `{ "total": number, "data": [...] }`
+
+- `POST /items`
+  - Header: `Authorization: TU_TOKEN`
+  - Body: `{ "name": "Texto" }`
+  - Respuesta: `{ "msg": "Item creado", "data": { ... } }`
+
+- `PUT /items/:id`
+  - Header: `Authorization: TU_TOKEN`
+  - Body: `{ "name": "Nuevo texto" }`
+  - Respuesta: `{ "msg": "Item actualizado", "data": { ... } }`
+
+- `DELETE /items/:id`
+  - Header: `Authorization: TU_TOKEN`
+  - Respuesta: `{ "msg": "Item eliminado", "data": { ... } }`
 
 ---
 
@@ -128,4 +190,4 @@ El flujo es:
 
 ## 📚 Créditos
 
-- Plantilla y guía generada por GitHub Copilot (GPT-4.1)
+- Plantilla y guía generada por GitHub Copilot (GPT-5.3-Codex)
