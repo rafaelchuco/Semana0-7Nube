@@ -13,7 +13,7 @@ Este proyecto es una demo simple de un sistema de autenticación (LOGIN con JWT)
 
 ## 📁 Estructura del proyecto
 
-```
+```text
 project/
 │
 ├── backend/
@@ -38,15 +38,15 @@ project/
 cd Semana0-7Nube
 ```
 
-2. **Levanta todo con Docker Compose:**
+1. **Levanta todo con Docker Compose:**
 
 ```bash
 docker-compose up --build
 ```
 
-3. **Abre tu navegador en:**
+1. **Abre tu navegador en:**
 
-```
+```text
 http://localhost
 ```
 

@@ -2,14 +2,43 @@ version: "3.8"
 
 services:
 
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: appdb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d appdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   backend1:
     build: ./backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/appdb
+    depends_on:
+      db:
+        condition: service_healthy
 
   backend2:
     build: ./backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/appdb
+    depends_on:
+      db:
+        condition: service_healthy
 
   backend3:
     build: ./backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/appdb
+    depends_on:
+      db:
+        condition: service_healthy
 
   nginx:
     image: nginx:latest
@@ -21,3 +50,6 @@ services:
       - backend1
       - backend2
       - backend3
+
+volumes:
+  db_data:
