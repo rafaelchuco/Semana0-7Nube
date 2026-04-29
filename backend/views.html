@@ -3,125 +3,324 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Demo Login + CRUD</title>
+  <title>Login + CRUD (Vista Guiada)</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
-    input, button { margin: 0.2rem; }
+    :root {
+      --bg: #f7f8fc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --secondary: #475569;
+      --danger: #b91c1c;
+      --border: #d1d5db;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 1.2rem;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0fdfa, var(--bg));
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    h1, h2 { margin: 0 0 0.75rem; }
+
+    .help {
+      margin: 0;
+      color: #4b5563;
+      font-size: 0.96rem;
+    }
+
+    .row {
+      margin-top: 0.8rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input {
+      flex: 1;
+      min-width: 230px;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.55rem 0.85rem;
+      cursor: pointer;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    button:hover { background: var(--primary-dark); }
+
+    .btn-secondary { background: var(--secondary); }
+    .btn-danger { background: var(--danger); }
+
+    .status {
+      margin-top: 0.8rem;
+      padding: 0.62rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      font-size: 0.95rem;
+    }
+
     .hidden { display: none; }
-    #items-list { margin-top: 1rem; }
-    .item { border: 1px solid #ccc; padding: 0.5rem; margin-bottom: 0.5rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.9rem;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.6rem;
+      text-align: left;
+    }
+
+    th { background: #f9fafb; }
+
+    .actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 700px) {
+      body { padding: 0.75rem; }
+      input { min-width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <h1>Demo Login + CRUD</h1>
-  <div id="login-section">
-    <h2>Login</h2>
-    <input id="username" placeholder="Usuario" value="admin">
-    <input id="password" type="password" placeholder="Contraseña" value="123">
-    <button onclick="login()">Entrar</button>
-    <div id="login-msg"></div>
-  </div>
+  <div class="container">
+    <div class="card">
+      <h1>Demo Login + CRUD</h1>
+      <p class="help">Flujo recomendado: 1) Login, 2) Crear item, 3) Editar item, 4) Eliminar item.</p>
+      <p class="help" id="server-info"></p>
+    </div>
 
-  <div id="crud-section" class="hidden">
-    <h2>CRUD de Items</h2>
-    <form onsubmit="addItem(event)">
-      <input id="item-name" placeholder="Nombre del item" required>
-      <button type="submit">Agregar</button>
-    </form>
-    <div id="items-list"></div>
-    <button onclick="logout()">Cerrar sesión</button>
+    <div id="login-section" class="card">
+      <h2>1) Iniciar sesión</h2>
+      <div class="row">
+        <input id="username" placeholder="Usuario" value="admin">
+        <input id="password" type="password" placeholder="Contraseña" value="123">
+        <button onclick="login()">Entrar</button>
+      </div>
+      <div id="login-msg" class="status">Usa admin / 123 para ingresar.</div>
+    </div>
+
+    <div id="crud-section" class="card hidden">
+      <h2>2) CRUD de Items</h2>
+      <p class="help">Cuando presionas "Editar", el formulario cambia a modo edición para ese item.</p>
+
+      <form id="item-form" onsubmit="saveItem(event)">
+        <div class="row">
+          <input id="item-name" placeholder="Nombre del item" required>
+          <button id="save-btn" type="submit">Crear item</button>
+          <button id="cancel-btn" class="btn-secondary hidden" type="button" onclick="cancelEdit()">Cancelar edición</button>
+        </div>
+      </form>
+
+      <div class="row">
+        <button class="btn-secondary" onclick="loadItems()">Recargar lista</button>
+        <button onclick="logout()">Cerrar sesión</button>
+      </div>
+
+      <div id="crud-msg" class="status">Aquí verás el resultado de cada operación.</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="items-body">
+          <tr>
+            <td colspan="3">No hay items todavía.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script>
     let token = '';
     let items = [];
+    let editingId = null;
+
+    function setMessage(id, text) {
+      document.getElementById(id).innerText = text;
+    }
+
+    function authHeaders(withJson = false) {
+      const headers = { Authorization: token };
+      if (withJson) headers['Content-Type'] = 'application/json';
+      return headers;
+    }
+
+    function renderServerInfo() {
+      const host = window.location.host;
+      setMessage('server-info', `Accediendo por Nginx en ${host}.`);
+    }
 
     function login() {
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
+
       fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       })
-      .then(r => r.json())
-      .then(data => {
-        if (data.token) {
+        .then(r => r.json())
+        .then(data => {
+          if (!data.token) {
+            setMessage('login-msg', data.msg || 'Error de login');
+            return;
+          }
+
           token = data.token;
           document.getElementById('login-section').classList.add('hidden');
           document.getElementById('crud-section').classList.remove('hidden');
+          setMessage('crud-msg', 'Login correcto. Ya puedes crear tu primer item.');
           loadItems();
-        } else {
-          document.getElementById('login-msg').innerText = data.msg || 'Error';
-        }
-      });
+        })
+        .catch(() => setMessage('login-msg', 'No se pudo conectar con el servidor'));
     }
 
     function loadItems() {
-      fetch('/items', { headers: { Authorization: token } })
+      fetch('/items', { headers: authHeaders() })
         .then(r => r.json())
         .then(data => {
-          items = data;
+          items = data.data || [];
           renderItems();
-        });
+        })
+        .catch(() => setMessage('crud-msg', 'No se pudo cargar la lista de items'));
     }
 
     function renderItems() {
-      const list = document.getElementById('items-list');
-      list.innerHTML = '';
+      const body = document.getElementById('items-body');
+      body.innerHTML = '';
+
+      if (!items.length) {
+        body.innerHTML = '<tr><td colspan="3">No hay items todavía.</td></tr>';
+        return;
+      }
+
       items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `
-          <b>${item.name || '(sin nombre)'}</b> <br>
-          <button onclick="editItem(${item.id})">Editar</button>
-          <button onclick="deleteItem(${item.id})">Eliminar</button>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.id}</td>
+          <td>${item.name || '(sin nombre)'}</td>
+          <td>
+            <div class="actions">
+              <button type="button" class="btn-secondary" onclick="startEdit(${item.id})">Editar</button>
+              <button type="button" class="btn-danger" onclick="deleteItem(${item.id})">Eliminar</button>
+            </div>
+          </td>
         `;
-        list.appendChild(div);
+        body.appendChild(tr);
       });
     }
 
-    function addItem(e) {
+    function startEdit(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+
+      editingId = id;
+      document.getElementById('item-name').value = item.name || '';
+      document.getElementById('save-btn').innerText = 'Guardar cambios';
+      document.getElementById('cancel-btn').classList.remove('hidden');
+      setMessage('crud-msg', `Editando item ID ${id}. Cambia el nombre y guarda.`);
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      document.getElementById('item-form').reset();
+      document.getElementById('save-btn').innerText = 'Crear item';
+      document.getElementById('cancel-btn').classList.add('hidden');
+    }
+
+    function saveItem(e) {
       e.preventDefault();
-      const name = document.getElementById('item-name').value;
-      fetch('/items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: token },
+      const name = document.getElementById('item-name').value.trim();
+
+      if (!name) {
+        setMessage('crud-msg', 'El nombre no puede estar vacío.');
+        return;
+      }
+
+      const method = editingId ? 'PUT' : 'POST';
+      const url = editingId ? `/items/${editingId}` : '/items';
+
+      fetch(url, {
+        method,
+        headers: authHeaders(true),
         body: JSON.stringify({ name })
       })
-      .then(r => r.json())
-      .then(item => {
-        items.push(item);
-        renderItems();
-        document.getElementById('item-name').value = '';
-      });
-    }
-
-    function editItem(id) {
-      const nuevo = prompt('Nuevo nombre:');
-      if (!nuevo) return;
-      fetch(`/items/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: token },
-        body: JSON.stringify({ name: nuevo })
-      })
-      .then(() => loadItems());
+        .then(r => r.json())
+        .then(data => {
+          setMessage('crud-msg', data.msg || 'Operación realizada.');
+          cancelEdit();
+          loadItems();
+        })
+        .catch(() => setMessage('crud-msg', 'Error al guardar el item'));
     }
 
     function deleteItem(id) {
+      if (!confirm(`¿Seguro que deseas eliminar el item ${id}?`)) return;
+
       fetch(`/items/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: token }
+        headers: authHeaders()
       })
-      .then(() => loadItems());
+        .then(r => r.json())
+        .then(data => {
+          setMessage('crud-msg', data.msg || 'Item eliminado.');
+          if (editingId === id) cancelEdit();
+          loadItems();
+        })
+        .catch(() => setMessage('crud-msg', 'Error al eliminar el item'));
     }
 
     function logout() {
       token = '';
+      items = [];
+      cancelEdit();
       document.getElementById('crud-section').classList.add('hidden');
       document.getElementById('login-section').classList.remove('hidden');
-      document.getElementById('login-msg').innerText = '';
+      setMessage('login-msg', 'Sesión cerrada.');
     }
+
+    renderServerInfo();
   </script>
 </body>
 </html>

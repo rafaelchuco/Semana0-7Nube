@@ -38,25 +38,46 @@ function auth(req, res, next) {
 
 // CRUD
 app.get("/items", auth, (req, res) => {
-  res.json(items);
+  res.json({ total: items.length, data: items });
 });
 
 app.post("/items", auth, (req, res) => {
-  const item = { id: Date.now(), ...req.body };
+  const { name } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    return res.status(400).json({ msg: "El campo 'name' es obligatorio" });
+  }
+
+  const item = { id: Date.now(), name: name.trim() };
   items.push(item);
-  res.json(item);
+  res.status(201).json({ msg: "Item creado", data: item });
 });
 
 app.put("/items/:id", auth, (req, res) => {
   const id = parseInt(req.params.id);
-  items = items.map(i => i.id === id ? { ...i, ...req.body } : i);
-  res.json({ msg: "Actualizado" });
+  const { name } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    return res.status(400).json({ msg: "El campo 'name' es obligatorio" });
+  }
+
+  const index = items.findIndex(i => i.id === id);
+  if (index === -1) {
+    return res.status(404).json({ msg: "Item no encontrado" });
+  }
+
+  items[index] = { ...items[index], name: name.trim() };
+  res.json({ msg: "Item actualizado", data: items[index] });
 });
 
 app.delete("/items/:id", auth, (req, res) => {
   const id = parseInt(req.params.id);
+  const index = items.findIndex(i => i.id === id);
+  if (index === -1) {
+    return res.status(404).json({ msg: "Item no encontrado" });
+  }
+
+  const deleted = items[index];
   items = items.filter(i => i.id !== id);
-  res.json({ msg: "Eliminado" });
+  res.json({ msg: "Item eliminado", data: deleted });
 });
 
 // TEST
