@@ -26,6 +26,10 @@ async function initDb() {
   `);
 }
 
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
 // LOGIN
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -51,12 +55,12 @@ function auth(req, res, next) {
 }
 
 // CRUD
-app.get("/items", auth, async (req, res) => {
+app.get("/items", auth, asyncHandler(async (req, res) => {
   const result = await pool.query("SELECT id, name FROM items ORDER BY id ASC");
   res.json({ total: result.rows.length, data: result.rows });
-});
+}));
 
-app.post("/items", auth, async (req, res) => {
+app.post("/items", auth, asyncHandler(async (req, res) => {
   const { name } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     return res.status(400).json({ msg: "El campo 'name' es obligatorio" });
@@ -67,9 +71,9 @@ app.post("/items", auth, async (req, res) => {
     [name.trim()]
   );
   res.status(201).json({ msg: "Item creado", data: created.rows[0] });
-});
+}));
 
-app.put("/items/:id", auth, async (req, res) => {
+app.put("/items/:id", auth, asyncHandler(async (req, res) => {
   const id = parseInt(req.params.id);
   const { name } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
@@ -85,9 +89,9 @@ app.put("/items/:id", auth, async (req, res) => {
   }
 
   res.json({ msg: "Item actualizado", data: updated.rows[0] });
-});
+}));
 
-app.delete("/items/:id", auth, async (req, res) => {
+app.delete("/items/:id", auth, asyncHandler(async (req, res) => {
   const id = parseInt(req.params.id);
 
   const deleted = await pool.query(
@@ -99,7 +103,7 @@ app.delete("/items/:id", auth, async (req, res) => {
   }
 
   res.json({ msg: "Item eliminado", data: deleted.rows[0] });
-});
+}));
 
 // TEST
 

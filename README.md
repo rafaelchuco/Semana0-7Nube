@@ -5,9 +5,22 @@
 Este proyecto es una demo simple de un sistema de autenticación (LOGIN con JWT) y CRUD de items, desplegado en 3 instancias de backend Node.js, balanceadas con Nginx usando Docker Compose.
 
 - **Backend:** Node.js + Express (login y CRUD)
+- **Base de datos compartida:** PostgreSQL (una sola para los 3 backends)
 - **Frontend:** HTML simple (en `/`)
 - **Balanceo:** Nginx (Round Robin)
 - **Orquestación:** Docker Compose
+
+### ¿Por qué antes se veía "una base distinta"?
+
+Porque el CRUD estaba guardando en memoria (`let items = []`) dentro de cada contenedor.
+
+- Backend1 tenía su propio arreglo.
+- Backend2 tenía otro arreglo distinto.
+- Backend3 otro más.
+
+Como Nginx reparte peticiones entre los 3, parecía que los datos "cambiaban" o desaparecían.
+
+Ahora el CRUD usa **PostgreSQL único** (`db`) y los 3 backends leen/escriben en la misma base.
 
 ---
 
@@ -21,6 +34,8 @@ project/
 │   ├── package.json     # Dependencias
 │   ├── Dockerfile       # Imagen backend
 │   └── views.html       # Frontend simple
+│
+├── db/                  # Servicio PostgreSQL (definido en compose)
 │
 ├── nginx/
 │   └── nginx.conf       # Configuración de Nginx
@@ -164,6 +179,7 @@ La caja de estado te muestra mensajes como "Item creado", "Item actualizado" o "
 ## 📦 Servicios en Docker Compose
 
 - **backend1, backend2, backend3:** Instancias del backend Node.js
+- **db:** PostgreSQL compartido
 - **nginx:** Balanceador de carga
 
 ---
