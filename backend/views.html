@@ -123,6 +123,8 @@
       <h1 id="main-title">Demo Login + CRUD desde el puerto -</h1>
       <p class="help">Flujo recomendado: 1) Login, 2) Crear item, 3) Editar item, 4) Eliminar item.</p>
       <p class="help" id="server-info"></p>
+      <p class="help" id="nginx-info">Nginx: puerto 80</p>
+      <p class="help" id="backend-info">Backend atendido: backend1 / backend2 / backend3</p>
     </div>
 
     <div id="login-section" class="card">
@@ -187,20 +189,20 @@
     }
 
     function renderServerInfo() {
-      const host = window.location.host;
+      const host = window.location.hostname;
+      const port = window.location.port || '80';
+
+      document.getElementById('main-title').innerText = `Demo Login + CRUD desde el puerto ${port}`;
+      setMessage('server-info', `Accediendo por Nginx en ${host}:${port}.`);
 
       fetch('/server-info')
         .then(r => r.json())
         .then(data => {
-          const port = data.port || '-';
           const backend = data.backend || 'backend';
-
-          document.getElementById('main-title').innerText = `Demo Login + CRUD desde el puerto ${port}`;
-          setMessage('server-info', `Accediendo por Nginx en ${host}. Atendido por ${backend}.`);
+          document.getElementById('backend-info').innerText = `Backend atendido: ${backend}`;
         })
         .catch(() => {
-          document.getElementById('main-title').innerText = 'Demo Login + CRUD desde el puerto -';
-          setMessage('server-info', `Accediendo por Nginx en ${host}.`);
+          document.getElementById('backend-info').innerText = 'Backend atendido: backend1 / backend2 / backend3';
         });
     }
 
@@ -233,7 +235,10 @@
       fetch('/items', { headers: authHeaders() })
         .then(r => r.json())
         .then(data => {
-          items = data.data || [];
+          items = (data.data || []).map(item => ({
+            ...item,
+            id: Number(item.id),
+          }));
           renderItems();
         })
         .catch(() => setMessage('crud-msg', 'No se pudo cargar la lista de items'));
@@ -265,7 +270,7 @@
     }
 
     function startEdit(id) {
-      const item = items.find(i => i.id === id);
+      const item = items.find(i => Number(i.id) === Number(id));
       if (!item) return;
 
       editingId = id;
