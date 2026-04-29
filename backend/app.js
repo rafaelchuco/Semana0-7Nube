@@ -2,15 +2,29 @@
 const path = require("path");
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const { Pool } = require("pg");
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 const SECRET = "12345";
+const DATABASE_URL = process.env.DATABASE_URL || "postgres://postgres:postgres@db:5432/appdb";
+
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+});
 
 let users = [{ username: "admin", password: "123" }];
-let items = [];
+
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS items (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL
+    )
+  `);
+}
 
 // LOGIN
 app.post("/login", (req, res) => {
@@ -37,47 +51,54 @@ function auth(req, res, next) {
 }
 
 // CRUD
-app.get("/items", auth, (req, res) => {
-  res.json({ total: items.length, data: items });
+app.get("/items", auth, async (req, res) => {
+  const result = await pool.query("SELECT id, name FROM items ORDER BY id ASC");
+  res.json({ total: result.rows.length, data: result.rows });
 });
 
-app.post("/items", auth, (req, res) => {
+app.post("/items", auth, async (req, res) => {
   const { name } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     return res.status(400).json({ msg: "El campo 'name' es obligatorio" });
   }
 
-  const item = { id: Date.now(), name: name.trim() };
-  items.push(item);
-  res.status(201).json({ msg: "Item creado", data: item });
+  const created = await pool.query(
+    "INSERT INTO items(name) VALUES($1) RETURNING id, name",
+    [name.trim()]
+  );
+  res.status(201).json({ msg: "Item creado", data: created.rows[0] });
 });
 
-app.put("/items/:id", auth, (req, res) => {
+app.put("/items/:id", auth, async (req, res) => {
   const id = parseInt(req.params.id);
   const { name } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     return res.status(400).json({ msg: "El campo 'name' es obligatorio" });
   }
 
-  const index = items.findIndex(i => i.id === id);
-  if (index === -1) {
+  const updated = await pool.query(
+    "UPDATE items SET name = $1 WHERE id = $2 RETURNING id, name",
+    [name.trim(), id]
+  );
+  if (updated.rowCount === 0) {
     return res.status(404).json({ msg: "Item no encontrado" });
   }
 
-  items[index] = { ...items[index], name: name.trim() };
-  res.json({ msg: "Item actualizado", data: items[index] });
+  res.json({ msg: "Item actualizado", data: updated.rows[0] });
 });
 
-app.delete("/items/:id", auth, (req, res) => {
+app.delete("/items/:id", auth, async (req, res) => {
   const id = parseInt(req.params.id);
-  const index = items.findIndex(i => i.id === id);
-  if (index === -1) {
+
+  const deleted = await pool.query(
+    "DELETE FROM items WHERE id = $1 RETURNING id, name",
+    [id]
+  );
+  if (deleted.rowCount === 0) {
     return res.status(404).json({ msg: "Item no encontrado" });
   }
 
-  const deleted = items[index];
-  items = items.filter(i => i.id !== id);
-  res.json({ msg: "Item eliminado", data: deleted });
+  res.json({ msg: "Item eliminado", data: deleted.rows[0] });
 });
 
 // TEST
@@ -87,4 +108,19 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views.html"));
 });
 
-app.listen(PORT, () => console.log("Running " + PORT));
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ msg: "Error interno del servidor" });
+});
+
+async function start() {
+  try {
+    await initDb();
+    app.listen(PORT, () => console.log("Running " + PORT));
+  } catch (error) {
+    console.error("No se pudo iniciar la app:", error.message);
+    process.exit(1);
+  }
+}
+
+start();
